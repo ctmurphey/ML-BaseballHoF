@@ -18,7 +18,58 @@ def verify_player(playerID):
         pass
     else:
         raise Exception(f"IDError: playerID {playerID} not found in database")
-        
+
+def verify_batter(playerID):
+    '''Verifies that the playerID recorded at lease one AB at some point'''
+
+    if playerID in batting['playerID'].values:
+        pass
+    else:
+        raise Exception(f"IDError: playerID {playerID} not found among batters")
+
+def verify_pitcher(playerID):
+    '''Verifies that the playerID pitched at some point'''
+
+    if playerID in pitching['playerID'].values:
+        pass
+    else:
+        raise Exception(f"IDError: playerID {playerID} not found among pitchers")
+
+
+
+
+def count_batting_stat(playerID, stat):
+    '''Allows the searching of the total number of a stat a player has,
+        (hits, walks, strikeouts, etc.).
+        PARAMS: playerID: the playerID of the relevant player
+                stat: the stat that we want to be tallied'''
+    verify_player(playerID)
+    verify_batter(playerID)
+
+    if stat == "K": #adding this because I know I'll make this mistake in the future
+        stat = "SO"
+
+    return batting.loc[batting['playerID']==playerID, [stat]].sum().values
+
+def count_pitching_stat(playerID, stat):
+    '''Allows the searching of the total number of a stat a player has,
+        (strikeouts, wins, saves, etc.).
+        PARAMS: playerID: the playerID of the relevant player
+                stat: the stat that we want to be tallied'''
+    verify_player(playerID)
+    verify_pitcher(playerID)
+
+    if stat == "K": #adding this because I know I'll make this mistake in the future
+        stat = "SO"
+
+    return pitching.loc[pitching['playerID']==playerID, [stat]].sum().values
+
+
+
+###BASIC STATS
+###These are the typical run-of-the-mill stats that don't require league
+###comparisons, they include AVG,OBP, SLG, ERA, and WHIP
+
 
 def AVG(playerID):
     '''Calculates the career batting average of the playerID.
@@ -26,6 +77,7 @@ def AVG(playerID):
     PARAMS: playerID: the playerID of the relevant player.'''
 
     verify_player(playerID)
+    verify_batter(playerID)
 
     hits = int(batting.loc[batting['playerID']==playerID, ["H"]].sum().values)
     atbats = int(batting.loc[batting['playerID']==playerID, ["AB"]].sum().values)
@@ -41,6 +93,8 @@ def OBP(playerID):
         PARAMS: playerID: the playerID of the relevant player.'''
 
     verify_player(playerID)
+    verify_batter(playerID)
+
 
     reached_base = batting.loc[batting['playerID']==playerID, ["H", "BB", "HBP"]].sum().sum()
     plate_appearance = batting.loc[batting['playerID']==playerID, ["AB", "BB", "SH", "HBP", "SF"]].sum().sum()
@@ -54,18 +108,23 @@ def SLG(playerID):
         PARAMS: playerID: the playerID of the relevant player.'''
 
     verify_player(playerID)
+    verify_batter(playerID)
 
-    hits     = int(batting.loc[batting['playerID']==playerID, ["H"]].sum().values)
 
-    doubles  = int(batting.loc[batting['playerID']==playerID, ["2B"]].sum().values)
-    triples  = int(batting.loc[batting['playerID']==playerID, ["3B"]].sum().values)
-    homeruns = int(batting.loc[batting['playerID']==playerID, ["HR"]].sum().values)
+    hits     = int(count_batting_stat(playerID, "H"))
+
+    doubles  = int(count_batting_stat(playerID, "2B"))
+    triples  = int(count_batting_stat(playerID, "3B"))
+    homeruns = int(count_batting_stat(playerID, "HR"))
 
     singles  = hits - doubles - triples - homeruns #since they're not directly logged here
-    atbats   = int(batting.loc[batting['playerID']==playerID, ["AB"]].sum().values)
+    atbats   = int(count_batting_stat(playerID, "AB"))
 
 
     return (singles + 2*doubles + 3*triples + 4*homeruns)/atbats
+
+
+
 
 
 
@@ -75,9 +134,11 @@ def ERA(playerID):
         PARAMS: playerID: the playerID of the relevant player.'''
 
     verify_player(playerID)
+    verify_pitcher(playerID)
 
-    ER = int(pitching.loc[pitching['playerID']==playerID, ['ER']].sum().values)
-    IPouts = int(pitching.loc[pitching['playerID']==playerID, ['IPouts']].sum().values)
+
+    ER = int(count_pitching_stat(playerID, "ER"))
+    IPouts = int(count_pitching_stat(playerID, "IPouts"))
 
     return 27*ER / IPouts
 
@@ -87,20 +148,12 @@ def WHIP(playerID):
         WHIP = 3*(BB+H)/IPouts (Walks + hits per inning pitched
         PARAMS: playerID: the playerID of the relevant player.'''
 
+    verify_player(playerID)
+    verify_pitcher(playerID)
+
     WH = int(pitching.loc[pitching['playerID']==playerID, ["H", "BB"]].sum().sum())
     IPouts = int(pitching.loc[pitching['playerID']==playerID, ['IPouts']].sum().values)
 
     return 3*WH/IPouts
 
-
-def count_pitching_stat(playerID, stat):
-    '''Allows the searching of the total number of a stat a player has,
-        (strikeouts, wins, saves, etc.).
-        PARAMS: playerID: the playerID of the relevant player
-                stat: the stat that we want to be tallied'''
-
-    if stat == "K": #adding this because I know I'll make this mistake in the future
-        stat = "SO"
-
-    return pitching.loc[pitching['playerID']==playerID, [stat]].sum().values
 
