@@ -9,7 +9,10 @@ batting = pd.read_csv('baseballdatabank-2022.2/core/Batting.csv') # regular seas
 pitching = pd.read_csv('baseballdatabank-2022.2/core/Pitching.csv')
 
 players_ids = players['playerID']
-# batting = batting.set_index(['playerID', 'yearID'])
+
+
+
+
 
 def verify_player(playerID):
     '''Verifies that that player is in the database
@@ -34,6 +37,8 @@ def verify_pitcher(playerID):
         pass
     else:
         raise Exception(f"IDError: playerID {playerID} not found among pitchers")
+
+
 
 
 
@@ -66,6 +71,9 @@ def count_pitching_stat(playerID, stat):
 
 
 
+
+
+
 ###BASIC STATS
 ###These are the typical run-of-the-mill stats that don't require league
 ###comparisons, they include AVG,OBP, SLG, ERA, and WHIP
@@ -79,8 +87,10 @@ def AVG(playerID):
     verify_player(playerID)
     verify_batter(playerID)
 
-    hits = int(batting.loc[batting['playerID']==playerID, ["H"]].sum().values)
-    atbats = int(batting.loc[batting['playerID']==playerID, ["AB"]].sum().values)
+    # hits = int(batting.loc[batting['playerID']==playerID, ["H"]].sum().values)
+    hits = int(count_batting_stat(playerID, "H"))
+    # atbats = int(batting.loc[batting['playerID']==playerID, ["AB"]].sum().values)
+    atbats = int(count_batting_stat(playerID, "AB"))
 
 
     return hits/atbats
@@ -96,8 +106,10 @@ def OBP(playerID):
     verify_batter(playerID)
 
 
-    reached_base = batting.loc[batting['playerID']==playerID, ["H", "BB", "HBP"]].sum().sum()
-    plate_appearance = batting.loc[batting['playerID']==playerID, ["AB", "BB", "SH", "HBP", "SF"]].sum().sum()
+    # reached_base = batting.loc[batting['playerID']==playerID, ["H", "BB", "HBP"]].sum().sum()
+    reached_base = sum([int(count_batting_stat(playerID, s)) for s in ["H", "BB", "HBP"]])
+    # plate_appearance = batting.loc[batting['playerID']==playerID, ["AB", "BB", "SH", "HBP", "SF"]].sum().sum()
+    plate_appearance = sum([int(count_batting_stat(playerID, s)) for s in ["AB", "BB", "SH", "HBP", "SF"]])
 
     return reached_base/plate_appearance
 
@@ -151,8 +163,10 @@ def WHIP(playerID):
     verify_player(playerID)
     verify_pitcher(playerID)
 
-    WH = int(pitching.loc[pitching['playerID']==playerID, ["H", "BB"]].sum().sum())
+    # WH = int(pitching.loc[pitching['playerID']==playerID, ["H", "BB"]].sum().sum())
+    WH = sum([int(count_pitching_stat(playerID, s)) for s in ["H", "BB"]])
     IPouts = int(pitching.loc[pitching['playerID']==playerID, ['IPouts']].sum().values)
+    IPouts = int(count_pitching_stat(playerID, "IPouts"))
 
     return 3*WH/IPouts
 
