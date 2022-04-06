@@ -6,6 +6,7 @@ from scipy import stats
 
 players = pd.read_csv('baseballdatabank-2022.2/core/People.csv') #basic player info, may want to trim down in future
 batting = pd.read_csv('baseballdatabank-2022.2/core/Batting.csv') # regular season batting
+pitching = pd.read_csv('baseballdatabank-2022.2/core/Pitching.csv')
 
 players_ids = players['playerID']
 # batting = batting.set_index(['playerID', 'yearID'])
@@ -68,4 +69,38 @@ def SLG(playerID):
 
 
 
+def ERA(playerID):
+    '''Calculates the Earned Run Average of the playerID
+        ERA = (ER/IPOuts)*27 (Earned runs per 27 outs pitched)
+        PARAMS: playerID: the playerID of the relevant player.'''
+
+    verify_player(playerID)
+
+    ER = int(pitching.loc[pitching['playerID']==playerID, ['ER']].sum().values)
+    IPouts = int(pitching.loc[pitching['playerID']==playerID, ['IPouts']].sum().values)
+
+    return 27*ER / IPouts
+
+
+def WHIP(playerID):
+    '''Calculates the WHIP of the playerID
+        WHIP = 3*(BB+H)/IPouts (Walks + hits per inning pitched
+        PARAMS: playerID: the playerID of the relevant player.'''
+
+    WH = int(pitching.loc[pitching['playerID']==playerID, ["H", "BB"]].sum().sum())
+    IPouts = int(pitching.loc[pitching['playerID']==playerID, ['IPouts']].sum().values)
+
+    return 3*WH/IPouts
+
+
+def count_pitching_stat(playerID, stat):
+    '''Allows the searching of the total number of a stat a player has,
+        (strikeouts, wins, saves, etc.).
+        PARAMS: playerID: the playerID of the relevant player
+                stat: the stat that we want to be tallied'''
+
+    if stat == "K": #adding this because I know I'll make this mistake in the future
+        stat = "SO"
+
+    return pitching.loc[pitching['playerID']==playerID, [stat]].sum().values
 
