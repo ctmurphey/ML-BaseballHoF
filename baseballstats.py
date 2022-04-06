@@ -20,17 +20,12 @@ def verify_player(playerID):
         
 
 def AVG(playerID):
-    '''Fetches the career batting average of the playerID.
+    '''Calculates the career batting average of the playerID.
     AVG = H/AB (hits per at-bat)
-    PARAMS:
-    playerID: the playerID of the relevant player.'''
+    PARAMS: playerID: the playerID of the relevant player.'''
 
     verify_player(playerID)
 
-    # print("Found them!")
-
-    # hits = batting[['playerID', 'yearID', 'H']].set_index(['playerID', 'yearID']).groupby(level='playerID').sum()[playerID]
-    # atbats = batting.sum(level="AB")[playerID]
     hits = int(batting.loc[batting['playerID']==playerID, ["H"]].sum().values)
     atbats = int(batting.loc[batting['playerID']==playerID, ["AB"]].sum().values)
 
@@ -38,7 +33,39 @@ def AVG(playerID):
     return hits/atbats
 
 
-    print('Found the data!')
 
-    # return hits
+def OBP(playerID):
+    '''Calculates the career on-base percentage of the playerID
+        OBP = (H+BB+HBP)/(AB+BB+SH+SF+HBP) (times reached base per plate appearence)
+        PARAMS: playerID: the playerID of the relevant player.'''
+
+    verify_player(playerID)
+
+    reached_base = batting.loc[batting['playerID']==playerID, ["H", "BB", "HBP"]].sum().sum()
+    plate_appearance = batting.loc[batting['playerID']==playerID, ["AB", "BB", "SH", "HBP", "SF"]].sum().sum()
+
+    return reached_base/plate_appearance
+
+
+def SLG(playerID):
+    '''Calculates the slugging percentage of the playerID
+        SLG = (1B*1+2B*2+3B*3+HR*4)/AB (total bases on hits per at-bat
+        PARAMS: playerID: the playerID of the relevant player.'''
+
+    verify_player(playerID)
+
+    hits     = int(batting.loc[batting['playerID']==playerID, ["H"]].sum().values)
+
+    doubles  = int(batting.loc[batting['playerID']==playerID, ["2B"]].sum().values)
+    triples  = int(batting.loc[batting['playerID']==playerID, ["3B"]].sum().values)
+    homeruns = int(batting.loc[batting['playerID']==playerID, ["HR"]].sum().values)
+
+    singles  = hits - doubles - triples - homeruns #since they're not directly logged here
+    atbats   = int(batting.loc[batting['playerID']==playerID, ["AB"]].sum().values)
+
+
+    return (singles + 2*doubles + 3*triples + 4*homeruns)/atbats
+
+
+
 
