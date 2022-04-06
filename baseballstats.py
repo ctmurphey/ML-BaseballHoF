@@ -6,9 +6,9 @@ from scipy import stats
 
 players = pd.read_csv('baseballdatabank-2022.2/core/People.csv') #basic player info, may want to trim down in future
 batting = pd.read_csv('baseballdatabank-2022.2/core/Batting.csv') # regular season batting
-# players['playerID'] = str(players['playerID'])
-players_ids = players['playerID'].astype(pd.StringDtype())
 
+players_ids = players['playerID']
+# batting = batting.set_index(['playerID', 'yearID'])
 
 def verify_player(playerID):
     '''Verifies that that player is in the database
@@ -16,17 +16,29 @@ def verify_player(playerID):
     if playerID in players_ids.values:
         pass
     else:
-        raise Exception("IDError: playerID not found in database")
+        raise Exception(f"IDError: playerID {playerID} not found in database")
         
 
 def AVG(playerID):
-    '''Fetches the batting average using the data in the csv files provided.
+    '''Fetches the career batting average of the playerID.
+    AVG = H/AB (hits per at-bat)
     PARAMS:
     playerID: the playerID of the relevant player.'''
 
     verify_player(playerID)
 
-    print("Found them!")
+    # print("Found them!")
 
-    
+    # hits = batting[['playerID', 'yearID', 'H']].set_index(['playerID', 'yearID']).groupby(level='playerID').sum()[playerID]
+    # atbats = batting.sum(level="AB")[playerID]
+    hits = int(batting.loc[batting['playerID']==playerID, ["H"]].sum().values)
+    atbats = int(batting.loc[batting['playerID']==playerID, ["AB"]].sum().values)
+
+
+    return hits/atbats
+
+
+    print('Found the data!')
+
+    # return hits
 
