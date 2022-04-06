@@ -14,5 +14,8 @@ Going to separate the code into several files based on what the intended goal of
 ### `README`:
 Provides documentation and links to all necessary downloads.
 
+### `baseballstats.py`:
+A collection of different functions for generating different stats based off the database. Most functions will just take the playerID and output a float (or int). Makes the notebook files much cleaner by allowing many of the functions, especially the ones that will likely be called across different notebooks, collected all in one place.
+
 ### `playwithdata.ipynb`:
 First step of the code. Just loading it into a pandas dataframe and doing some basic data visualization with it. This acts as both a sanity check that the data loading works and practice for manipulating/sorting the data for the main files later on. No ML model will be trained here.
