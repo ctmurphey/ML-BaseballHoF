@@ -171,3 +171,33 @@ def WHIP(playerID):
     return 3*WH/IPouts
 
 
+
+
+
+### Intermediate Stats:
+### These stats are similar to the basic ones, but incorporate something
+### else into the mix that pertains to the league as a whole. These stats
+### include ERA+, OPS+, FIP, wOBA
+
+def ERAplus(playerID):
+    '''Calculates the career ERA+ of the playerID
+        ERA+ = 100*ERA(league)/ERA(player)
+        PARAMS: playerID: playerID of relevant player'''
+
+    verify_player(playerID)
+    verify_pitcher(playerID)
+
+    ERA_p = ERA(playerID)
+
+    year_start = 1231
+
+
+
+
+
+### Advanced Stats:
+### These stats are significantly more complicated than the intermediate
+### ones and may even draw upon and weight them. They have the ironic
+### tendancy to be some of the most used yet least understood stats when
+### comparing different players. They include fWAR and bWAR (yes they're
+### different).
