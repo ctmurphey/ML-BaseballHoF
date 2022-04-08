@@ -19,3 +19,6 @@ A collection of different functions for generating different stats based off the
 
 ### `playwithdata.ipynb`:
 First step of the code. Just loading it into a pandas dataframe and doing some basic data visualization with it. This acts as both a sanity check that the data loading works and practice for manipulating/sorting the data for the main files later on. No ML model will be trained here.
+
+### `predictive-models.ipynb`:
+Constructs multiple different machine learning models with different mixes of stats from `baseballstats.py`. While it would be simpler to just make one that incorporates everything and perform LASSO regression to eliminate the irrelevant ones, the goal is instead to assess how well some of these stats change how well the model classifies.
