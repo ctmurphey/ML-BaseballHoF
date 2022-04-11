@@ -22,3 +22,6 @@ First step of the code. Just loading it into a pandas dataframe and doing some b
 
 ### `predictive-models.ipynb`:
 Constructs multiple different machine learning models with different mixes of stats from `baseballstats.py`. While it would be simpler to just make one that incorporates everything and perform LASSO regression to eliminate the irrelevant ones, the goal is instead to assess how well some of these stats change how well the model classifies.
+
+### `Fangraphs-Leaderboard.csv`:
+Baseball statistics site [Fangraphs](https://www.fangraphs.com/) has a few of their own weighted stats, like Fielding-Independent Pitching (FIP) and weighted On-Base Average (wOBA). This file is a table of the weights they use to calculate these stats by year, as these values are adjusted every year and must be accounted for.

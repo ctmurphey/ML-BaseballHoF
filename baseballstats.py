@@ -7,6 +7,8 @@ from scipy import stats
 players = pd.read_csv('baseballdatabank-2022.2/core/People.csv') #basic player info, may want to trim down in future
 batting = pd.read_csv('baseballdatabank-2022.2/core/Batting.csv') # regular season batting
 pitching = pd.read_csv('baseballdatabank-2022.2/core/Pitching.csv')
+fielding = pd.read_csv('baseballdatabank-2022.2/core/Fielding.csv')
+FG_weights = pd.read_csv('FanGraphs-Leaderboard.csv')
 
 players_ids = players['playerID']
 
@@ -16,7 +18,7 @@ players_ids = players['playerID']
 
 def verify_player(playerID):
     '''Verifies that that player is in the database
-    by checking their unique playerID against it'''
+    by checking their unique playerID against it.'''
     if playerID in players_ids.values:
         pass
     else:
@@ -215,6 +217,9 @@ def OPSplus(playerID):
     verify_player(playerID)
     verify_batter(playerID)
 
+    OBP_b = OBP(playerID)
+    SLG_b = SLG(playerID)
+
     OPS_b = OBP(playerID) + SLG(playerID)
     ### This may be slightly off as it doesn't account for players starting/ending mid season
     ###Should be close enough approximation though, assuming the player played multiple seasons
@@ -226,7 +231,6 @@ def OPSplus(playerID):
     date_end = players.loc[players['playerID']==playerID, ['finalGame']]
     year_end = int(np.array(date_end.values)[0][0][0:4])
 
-    # NEED TO CORRECT THESE, RIGHT NOW THEY'RE JUST A COPYPASTE FROM ERA+
 
     H_l   = int(batting.loc[(batting['yearID']>=year_start) & (batting['yearID']<=year_end), ['H']].sum().values)
     BB_l  = int(batting.loc[(batting['yearID']>=year_start) & (batting['yearID']<=year_end), ['BB']].sum().values)
@@ -245,10 +249,31 @@ def OPSplus(playerID):
     SLG_l = (SGL_l + 2*DBL_l + 3*TPL_l + 4*HR_l)/AB_l
     OBP_l = RB_l / PA_l   
 
-    # ERA_l = 27*ra_l/outs_l
     OPS_l = OBP_l + SLG_l
 
-    return 100*OPS_b/OPS_l
+    return 100*(OBP_b/OBP_l + SLG_b/SLG_l -1)
+
+
+
+
+def wOBA(playerID):
+
+    verify_player(playerID)
+    verify_batter(playerID)
+
+
+
+    return
+
+
+
+def FIP(playerID):
+
+    verify_player(playerID)
+    verify_pitcher(playerID)
+
+
+    return
 
 
 ### Advanced Stats:
@@ -256,4 +281,4 @@ def OPSplus(playerID):
 ### ones and may even draw upon and weight them. They have the ironic
 ### tendancy to be some of the most used yet least understood stats when
 ### comparing different players. They include fWAR and bWAR (yes they're
-### different).
+### different, same stat created by different stat companies (Fangraphs and BBRef)).
