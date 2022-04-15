@@ -56,7 +56,7 @@ def count_batting_stat(playerID, stat):
     if stat == "K": #adding this because I know I'll make this mistake in the future
         stat = "SO"
 
-    return batting.loc[batting['playerID']==playerID, [stat]].sum().values
+    return float(batting.loc[batting['playerID']==playerID, [stat]].sum().values)
 
 def count_pitching_stat(playerID, stat):
     '''Allows the searching of the total number of a stat a player has,
@@ -69,9 +69,12 @@ def count_pitching_stat(playerID, stat):
     if stat == "K": #adding this because I know I'll make this mistake in the future
         stat = "SO"
 
-    return pitching.loc[pitching['playerID']==playerID, [stat]].sum().values
+    return float(pitching.loc[pitching['playerID']==playerID, [stat]].sum().values)
 
 
+def get_FG_coeff(year, c):
+
+    return float(FG_weights.loc[(FG_weights['Season']==year), [c]].values)
 
 
 
@@ -220,7 +223,6 @@ def OPSplus(playerID):
     OBP_b = OBP(playerID)
     SLG_b = SLG(playerID)
 
-    OPS_b = OBP(playerID) + SLG(playerID)
     ### This may be slightly off as it doesn't account for players starting/ending mid season
     ###Should be close enough approximation though, assuming the player played multiple seasons
 
@@ -249,7 +251,6 @@ def OPSplus(playerID):
     SLG_l = (SGL_l + 2*DBL_l + 3*TPL_l + 4*HR_l)/AB_l
     OBP_l = RB_l / PA_l   
 
-    OPS_l = OBP_l + SLG_l
 
     return 100*(OBP_b/OBP_l + SLG_b/SLG_l -1)
 
@@ -257,23 +258,75 @@ def OPSplus(playerID):
 
 
 def wOBA(playerID):
+    '''wOBA is the sum of unintentional BB, HBP, 1B, 2B, 3B, and HR
+    individually weighted by type and year, all divided by
+    (AB + uBB + SF + HBP)
+    PARAMS: playerID'''
 
     verify_player(playerID)
     verify_batter(playerID)
 
+    date_start = players.loc[players['playerID']==playerID, ['debut']]
+    year_start = int(np.array(date_start.values)[0][0][0:4])
+
+    date_end = players.loc[players['playerID']==playerID, ['finalGame']]
+    year_end = int(np.array(date_end.values)[0][0][0:4])
 
 
-    return
+    PA_tot = sum([count_batting_stat(playerID, s) for s in ['AB', 'BB', 'SF', 'HBP']]) \
+        - count_batting_stat(playerID, 'IBB')
+
+    weighted_nums = 0
+    for yr in range(year_start, year_end+1):
+        uBB = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['BB']].values)
+        HBP = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['HBP']].values)
+        dbl = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['2B']].values)
+        tpl = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['3B']].values)
+        HR  = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['HR']].values)
+        sgl = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['H']].values) \
+              - (dbl + tpl + HR)
+        
+        weighted_nums += uBB*get_FG_coeff(yr, 'wBB') + HBP*get_FG_coeff(yr, 'wHBP') + sgl*get_FG_coeff(yr, 'w1B')\
+            + dbl*get_FG_coeff(yr, 'w2B') + tpl*get_FG_coeff(yr, 'w3B') + HR*get_FG_coeff(yr, 'wHR')
+
+
+
+
+    return weighted_nums / PA_tot
 
 
 
 def FIP(playerID):
+    '''Calculates the career Fielding Independent Pitching of playerID
+    FIP = (13*HR + 3*(BB+HBP)-2*SO + cFIP)/IPtot
+    where cFIP = sum(CFIP(yr)*IP(yr))
+    PARAMS : playerID'''
 
     verify_player(playerID)
     verify_pitcher(playerID)
 
+    HR = count_pitching_stat(playerID, 'HR')
+    BB_HBP = count_pitching_stat(playerID, 'BB') + count_pitching_stat(playerID, 'HBP')
+    SO = count_pitching_stat(playerID, 'SO')
+    IP_tot = count_pitching_stat(playerID, 'IPouts')/3
 
-    return
+    date_start = players.loc[players['playerID']==playerID, ['debut']]
+    year_start = int(np.array(date_start.values)[0][0][0:4])
+
+    date_end = players.loc[players['playerID']==playerID, ['finalGame']]
+    year_end = int(np.array(date_end.values)[0][0][0:4])
+
+    cFIP = 0
+    for yr in range(year_start, year_end+1):
+        c = get_FG_coeff(yr, 'cFIP')
+
+        IPyr = float(pitching.loc[(pitching['playerID']==playerID) & (pitching['yearID']==yr), ['IPouts']].sum().values)/3
+
+        cFIP += c*IPyr
+
+    
+
+    return (13*HR + 3*BB_HBP - 2*SO + cFIP)/IP_tot
 
 
 ### Advanced Stats:
@@ -282,3 +335,13 @@ def FIP(playerID):
 ### tendancy to be some of the most used yet least understood stats when
 ### comparing different players. They include fWAR and bWAR (yes they're
 ### different, same stat created by different stat companies (Fangraphs and BBRef)).
+
+
+def fWAR(playerID):
+    return
+
+
+
+
+def bWAR(playerID):
+    return
