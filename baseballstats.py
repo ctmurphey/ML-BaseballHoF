@@ -1,14 +1,20 @@
 '''A collection of stats generating functions meant to clarify code in the notebooks. Using the '''
 
+from socket import send_fds
 import numpy as np
 import pandas as pd
 from scipy import stats
 
-players = pd.read_csv('baseballdatabank-2022.2/core/People.csv') #basic player info, may want to trim down in future
-batting = pd.read_csv('baseballdatabank-2022.2/core/Batting.csv') # regular season batting
-pitching = pd.read_csv('baseballdatabank-2022.2/core/Pitching.csv')
-fielding = pd.read_csv('baseballdatabank-2022.2/core/Fielding.csv')
+players    = pd.read_csv('baseballdatabank-2022.2/core/People.csv') #basic player info, may want to trim down in future
+batting    = pd.read_csv('baseballdatabank-2022.2/core/Batting.csv') # regular season batting
+pitching   = pd.read_csv('baseballdatabank-2022.2/core/Pitching.csv')
+fielding   = pd.read_csv('baseballdatabank-2022.2/core/Fielding.csv')
 FG_weights = pd.read_csv('FanGraphs-Leaderboard.csv')
+postseason = pd.read_csv('baseballdatabank-2022.2/core/SeriesPost.csv')
+awards     = pd.read_csv("baseballdatabank-2022.2/contrib/AwardsPlayers.csv")
+allstar    = pd.read_csv("baseballdatabank-2022.2/core/AllstarFull.csv")
+post_bat   = pd.read_csv('baseballdatabank-2022.2/core/BattingPost.csv')
+post_pitch = pd.read_csv('baseballdatabank-2022.2/core/PitchingPost.csv')
 
 players_ids = players['playerID']
 
@@ -81,7 +87,7 @@ def get_FG_coeff(year, c):
 
 ###BASIC STATS
 ###These are the typical run-of-the-mill stats that don't require league
-###comparisons, they include AVG,OBP, SLG, ERA, and WHIP
+###comparisons. They include AVG,OBP, SLG, ERA, and WHIP. 
 
 
 def AVG(playerID):
@@ -92,9 +98,7 @@ def AVG(playerID):
     verify_player(playerID)
     verify_batter(playerID)
 
-    # hits = int(batting.loc[batting['playerID']==playerID, ["H"]].sum().values)
     hits = int(count_batting_stat(playerID, "H"))
-    # atbats = int(batting.loc[batting['playerID']==playerID, ["AB"]].sum().values)
     atbats = int(count_batting_stat(playerID, "AB"))
 
 
@@ -168,11 +172,69 @@ def WHIP(playerID):
     verify_player(playerID)
     verify_pitcher(playerID)
 
-    # WH = int(pitching.loc[pitching['playerID']==playerID, ["H", "BB"]].sum().sum())
     WH = sum([int(count_pitching_stat(playerID, s)) for s in ["H", "BB"]])
     IPouts = int(count_pitching_stat(playerID, "IPouts"))
 
     return 3*WH/IPouts
+
+
+### "Trophy Stats":
+### These will be included in the basic stats due to their "easier to understand"
+### nature. They're simply counting the awards won by the player in question (gold
+### gloves, MVPs, etc.) and world series titles. However, they differ from the basic
+### stats in that they have different requirements for setting up.
+
+def award_count(playerID, award=None):
+    '''Counts the awards the playerID has won. If award=None, all awards
+    are counted. Otherwise the award specified will be counted
+    PARAMS: playerID: ID of relevant player; award: specific award counted (default None)'''
+
+    if award == None:
+        return awards['playerID'].value_counts()[playerID]
+    else:
+        return awards.loc[awards['awardID']==award, ['playerID']].value_counts()[playerID]
+
+    
+def allstar_count(playerID):
+    '''Counts the number of all-star appearances by the playerID'''
+    return allstar['playerID'].value_counts()[playerID]
+
+
+
+def WS_titles(playerID):
+    '''Counts the number of World Series titles the playerID has'''
+
+    try: 
+        verify_batter(playerID)
+    except:
+        verify_pitcher(playerID)
+
+    WS_count = 0
+
+    date_start = players.loc[players['playerID']==playerID, ['debut']]
+    year_start = int(np.array(date_start.values)[0][0][0:4])
+
+    date_end = players.loc[players['playerID']==playerID, ['finalGame']]
+    year_end = int(np.array(date_end.values)[0][0][0:4])
+
+    for year in range(year_start, year_end+1):
+        WS_winner = str(postseason.loc[(postseason['round']=='WS') & (postseason['yearID']==year), ['teamIDwinner']].values)
+
+        if playerID in post_bat.loc[(post_bat['yearID']==year) & (post_bat['round'] == 'WS'), ['playerID']].values:
+            player_team = str(post_bat.loc[(post_bat['yearID']==year) & (post_bat['playerID'] == playerID) & (post_bat['round'] == 'WS'), ['teamID']].values)
+            if player_team == WS_winner:
+                WS_count += 1
+
+        # Gotta cover all bases (pun intended) in case a pitcher never batted in the WS
+        elif playerID in post_pitch.loc[(post_pitch['yearID']==year) & (post_pitch['round'] == 'WS'), ['playerID']].values:
+            player_team = str(post_pitch.loc[(post_pitch['yearID']==year) & (post_pitch['playerID'] == playerID) & (post_pitch['round'] == 'WS'), ['teamID']].values)
+            if player_team == WS_winner:
+                WS_count += 1
+
+        else:
+            continue
+    
+    return WS_count
 
 
 
