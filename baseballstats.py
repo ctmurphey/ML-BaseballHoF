@@ -1,4 +1,5 @@
-'''A collection of stats generating functions meant to clarify code in the notebooks. Using the '''
+'''A collection of stats generating functions meant to clarify code in the notebooks.
+Using the database in the '''
 
 from socket import send_fds
 import numpy as np
@@ -16,6 +17,7 @@ allstar    = pd.read_csv("baseballdatabank-2022.2/core/AllstarFull.csv")
 post_bat   = pd.read_csv('baseballdatabank-2022.2/core/BattingPost.csv')
 post_pitch = pd.read_csv('baseballdatabank-2022.2/core/PitchingPost.csv')
 halloffame = pd.read_csv('baseballdatabank-2022.2/contrib/HallOfFame.csv')
+appearances= pd.read_csv('baseballdatabank-2022.2/core/Appearances.csv')
 
 players_ids = players['playerID']
 
@@ -83,7 +85,11 @@ def get_FG_coeff(year, c):
 
     return float(FG_weights.loc[(FG_weights['Season']==year), [c]].values)
 
+def count_appearances(playerID):
+    '''Counts the appearances each player made at a position'''
+    cols = ['G_p','G_c','G_1b','G_2b','G_3b','G_ss','G_of','G_dh','G_ph','G_pr']
 
+    return appearances.loc[appearances['playerID']==playerID, cols].sum(axis=0)
 
 
 ###BASIC STATS
@@ -396,19 +402,3 @@ def FIP(playerID):
     return (13*HR + 3*BB_HBP - 2*SO + cFIP)/IP_tot
 
 
-### Advanced Stats:
-### These stats are significantly more complicated than the intermediate
-### ones and may even draw upon and weight them. They have the ironic
-### tendancy to be some of the most used yet least understood stats when
-### comparing different players. They include fWAR and bWAR (yes they're
-### different, same stat created by different stat companies (Fangraphs and BBRef)).
-
-
-def fWAR(playerID):
-    return
-
-
-
-
-def bWAR(playerID):
-    return
