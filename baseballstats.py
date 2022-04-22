@@ -15,6 +15,7 @@ awards     = pd.read_csv("baseballdatabank-2022.2/contrib/AwardsPlayers.csv")
 allstar    = pd.read_csv("baseballdatabank-2022.2/core/AllstarFull.csv")
 post_bat   = pd.read_csv('baseballdatabank-2022.2/core/BattingPost.csv')
 post_pitch = pd.read_csv('baseballdatabank-2022.2/core/PitchingPost.csv')
+halloffame = pd.read_csv('baseballdatabank-2022.2/contrib/HallOfFame.csv')
 
 players_ids = players['playerID']
 
@@ -237,6 +238,10 @@ def WS_titles(playerID):
     return WS_count
 
 
+def HoF_inductee(playerID):
+    inducted = playerID in halloffame.loc[halloffame['inducted']=='Y', ['playerID']].values
+
+    return int(inducted)
 
 
 
