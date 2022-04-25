@@ -1,15 +1,12 @@
 '''A collection of stats generating functions meant to clarify code in the notebooks.
 Using the database in the '''
 
-from socket import send_fds
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 players    = pd.read_csv('baseballdatabank-2022.2/core/People.csv') #basic player info, may want to trim down in future
 batting    = pd.read_csv('baseballdatabank-2022.2/core/Batting.csv') # regular season batting
 pitching   = pd.read_csv('baseballdatabank-2022.2/core/Pitching.csv')
-fielding   = pd.read_csv('baseballdatabank-2022.2/core/Fielding.csv')
 FG_weights = pd.read_csv('FanGraphs-Leaderboard.csv')
 postseason = pd.read_csv('baseballdatabank-2022.2/core/SeriesPost.csv')
 awards     = pd.read_csv("baseballdatabank-2022.2/contrib/AwardsPlayers.csv")
@@ -19,16 +16,19 @@ post_pitch = pd.read_csv('baseballdatabank-2022.2/core/PitchingPost.csv')
 halloffame = pd.read_csv('baseballdatabank-2022.2/contrib/HallOfFame.csv')
 appearances= pd.read_csv('baseballdatabank-2022.2/core/Appearances.csv')
 
-players_ids = players['playerID']
+players_ids = set(players['playerID'].values)
 
+batting = batting.replace('', 0, regex=True)
+batting = batting.replace(np.NaN, 0, regex=True)
 
-
+pitching = pitching.replace('', 0, regex=True)
+pitching = pitching.replace(np.NaN, 0, regex=True)
 
 
 def verify_player(playerID):
     '''Verifies that that player is in the database
     by checking their unique playerID against it.'''
-    if playerID in players_ids.values:
+    if playerID in players_ids:
         pass
     else:
         raise Exception(f"IDError: playerID {playerID} not found in database")
@@ -185,7 +185,7 @@ def WHIP(playerID):
     return 3*WH/IPouts
 
 
-### "Trophy Stats":
+### "Miscellanious Stats":
 ### These will be included in the basic stats due to their "easier to understand"
 ### nature. They're simply counting the awards won by the player in question (gold
 ### gloves, MVPs, etc.) and world series titles. However, they differ from the basic
@@ -195,16 +195,20 @@ def award_count(playerID, award=None):
     '''Counts the awards the playerID has won. If award=None, all awards
     are counted. Otherwise the award specified will be counted
     PARAMS: playerID: ID of relevant player; award: specific award counted (default None)'''
-
-    if award == None:
-        return awards['playerID'].value_counts()[playerID]
-    else:
-        return awards.loc[awards['awardID']==award, ['playerID']].value_counts()[playerID]
-
+    try:
+        if award == None:
+            return awards['playerID'].value_counts()[playerID]
+        else:
+            return awards.loc[awards['awardID']==award, ['playerID']].value_counts()[playerID]
+    except:
+        return 0
     
 def allstar_count(playerID):
     '''Counts the number of all-star appearances by the playerID'''
-    return allstar['playerID'].value_counts()[playerID]
+    try:
+        return allstar['playerID'].value_counts()[playerID]
+    except:
+        return 0
 
 
 
@@ -245,11 +249,27 @@ def WS_titles(playerID):
 
 
 def HoF_inductee(playerID):
-    inducted = playerID in halloffame.loc[halloffame['inducted']=='Y', ['playerID']].values
+    '''Checks whether player made it into the hall as a player. Managers
+    would need a seperate category which at the moment is beyond the scope
+    of the project'''
+    inducted = playerID in halloffame.loc[(halloffame['inducted']=='Y') 
+            & (halloffame['category']=='Player'), ['playerID']].values
 
     return int(inducted)
 
 
+def count_seasons(playerID):
+    '''Counts the number of different seasons a player played'''
+
+    player_seasons = appearances.loc[appearances['playerID']==playerID, ['yearID']].values
+    return len(set(player_seasons.astype(int).T[0]))
+
+
+def last_season(playerID):
+    '''returns the last year the player played in, part of the HoF requirements'''
+    date_end = players.loc[players['playerID']==playerID, ['finalGame']]
+    year_end = int(np.array(date_end.values)[0][0][0:4])
+    return year_end
 
 ### Intermediate Stats:
 ### These stats are similar to the basic ones, but incorporate something
@@ -339,24 +359,21 @@ def wOBA(playerID):
     verify_player(playerID)
     verify_batter(playerID)
 
-    date_start = players.loc[players['playerID']==playerID, ['debut']]
-    year_start = int(np.array(date_start.values)[0][0][0:4])
-
-    date_end = players.loc[players['playerID']==playerID, ['finalGame']]
-    year_end = int(np.array(date_end.values)[0][0][0:4])
-
 
     PA_tot = sum([count_batting_stat(playerID, s) for s in ['AB', 'BB', 'SF', 'HBP']]) \
-        - count_batting_stat(playerID, 'IBB')
+                - count_batting_stat(playerID, 'IBB')
 
+    years_played = batting.loc[batting['playerID']==playerID, ['yearID']].values.T[0]
     weighted_nums = 0
-    for yr in range(year_start, year_end+1):
-        uBB = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['BB']].values)
-        HBP = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['HBP']].values)
-        dbl = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['2B']].values)
-        tpl = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['3B']].values)
-        HR  = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['HR']].values)
-        sgl = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['H']].values) \
+
+    # print(years_played)
+    for yr in years_played:
+        uBB = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['BB']].sum().values)
+        HBP = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['HBP']].sum().values)
+        dbl = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['2B']].sum().values)
+        tpl = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['3B']].sum().values)
+        HR  = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['HR']].sum().values)
+        sgl = int(batting.loc[(batting['yearID']==yr) & (batting['playerID']==playerID), ['H']].sum().values) \
               - (dbl + tpl + HR)
         
         weighted_nums += uBB*get_FG_coeff(yr, 'wBB') + HBP*get_FG_coeff(yr, 'wHBP') + sgl*get_FG_coeff(yr, 'w1B')\
@@ -383,14 +400,10 @@ def FIP(playerID):
     SO = count_pitching_stat(playerID, 'SO')
     IP_tot = count_pitching_stat(playerID, 'IPouts')/3
 
-    date_start = players.loc[players['playerID']==playerID, ['debut']]
-    year_start = int(np.array(date_start.values)[0][0][0:4])
-
-    date_end = players.loc[players['playerID']==playerID, ['finalGame']]
-    year_end = int(np.array(date_end.values)[0][0][0:4])
+    years_played = batting.loc[batting['playerID']==playerID, ['yearID']].values.T[0]
 
     cFIP = 0
-    for yr in range(year_start, year_end+1):
+    for yr in years_played:
         c = get_FG_coeff(yr, 'cFIP')
 
         IPyr = float(pitching.loc[(pitching['playerID']==playerID) & (pitching['yearID']==yr), ['IPouts']].sum().values)/3
