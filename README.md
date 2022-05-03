@@ -3,7 +3,7 @@ The goal of this is to construct a model based of previous players, both in the 
 
 This served as my final project for AMS 561 in the Spring 2022 semester at Stony Brook University.
 ## Libraries:
-Requires Python 3.8+ and the following libraries: `numpy`, `pandas`, `matplotlib`, `tensorflow` and `scikit-learn`.
+Requires Python 3.8+ and the following libraries: `numpy`, `pandas`, `matplotlib` and `scikit-learn`. In the future it may require `tensorflow`
 ## Data:
 The data comes from [Lahman's Baseball Database](https://www.seanlahman.com/baseball-archive/statistics/), specifically the .zip collection of csv files which can be directly downloaded [here](https://github.com/chadwickbureau/baseballdatabank/archive/refs/tags/v2022.2.zip). It contains player-season level data dating back all the way to 1871. Running the model training in `predictive-models.py` doesn't require the data be downloaded, as the files `pitchingdata.csv` and `battingdata.csv` already contain the processed data. However, in order to run the rest of the code (`playwithdata.ipynb`, `makedata.py`, `baseballstats.py`), the files need to be downloaded from the like above and placed in the same directory.
 
@@ -27,3 +27,6 @@ Constructs multiple different machine learning models with different mixes of st
 
 ### `Fangraphs-Leaderboard.csv`:
 Baseball statistics site [Fangraphs](https://www.fangraphs.com/) has a few of their own weighted stats, like Fielding-Independent Pitching (FIP) and weighted On-Base Average (wOBA). This file is a table of the weights they use to calculate these stats by year, as these values are adjusted every year and must be accounted for.
+
+### `pitchingdata.csv` and `battingdata.csv`:
+Contains all data after preprocessing. Only players who were eligible for the Hall and have since past their eligibility period are included in these files. Created with `make-data.py`, some visualizations of the data in these files can be seen in `playwithdata.ipynb`.
